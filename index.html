@@ -1943,26 +1943,54 @@ function selectExercise(blockId, exerciseId) {
   disp.style.display = 'block';
 }
 
+function isBodyweight(blockId) {
+  const exId = $('ex-id-' + blockId)?.value;
+  if (!exId) return false;
+  const ex = DATA.exerciseDatabase.find(e => e.id === exId);
+  return ex?.equipment === 'Bodyweight';
+}
+
 function addSet(blockId) {
   const container = $('sets-container-' + blockId);
   const setNum = container.children.length + 1;
   const setId = uid();
+  const bw = isBodyweight(blockId);
   const div = document.createElement('div');
   div.id = 'set-' + setId;
-  div.className = 'form-row-3';
   div.style.marginBottom = '8px';
+  div.style.display = 'flex';
+  div.style.gap = '8px';
   div.style.alignItems = 'center';
-  div.innerHTML = `
-    <div style="display:flex;align-items:center;gap:6px;">
-      <span style="font-size:12px;color:var(--text-light);font-weight:500;min-width:32px;">Set ${setNum}</span>
-    </div>
-    <input type="number" class="form-input" id="set-reps-${setId}" placeholder="Reps" min="1">
-    <div style="display:flex;gap:6px;align-items:center;">
+
+  if (bw) {
+    div.innerHTML = `
+      <span style="font-size:12px;color:var(--text-light);font-weight:500;min-width:32px;flex-shrink:0;">Set ${setNum}</span>
+      <input type="number" class="form-input" id="set-reps-${setId}" placeholder="Reps" min="1" style="flex:1;">
+      <select class="form-select" id="set-bwtype-${setId}" onchange="toggleBWWeight('${setId}')" style="flex:1;">
+        <option value="bw">BW</option>
+        <option value="bw+">BW +</option>
+        <option value="bw-">BW −</option>
+      </select>
+      <input type="number" class="form-input" id="set-weight-${setId}" placeholder="kg" min="0" step="0.5" style="width:64px;display:none;">
+      <button style="background:none;border:none;color:var(--text-light);cursor:pointer;font-size:14px;flex-shrink:0;" onclick="document.getElementById('set-${setId}').remove()">✕</button>
+    `;
+  } else {
+    div.innerHTML = `
+      <span style="font-size:12px;color:var(--text-light);font-weight:500;min-width:32px;flex-shrink:0;">Set ${setNum}</span>
+      <input type="number" class="form-input" id="set-reps-${setId}" placeholder="Reps" min="1" style="flex:1;">
       <input type="number" class="form-input" id="set-weight-${setId}" placeholder="kg" min="0" step="0.5" style="flex:1;">
-      <button style="background:none;border:none;color:var(--text-light);cursor:pointer;font-size:14px;" onclick="$('set-${setId}').remove()">✕</button>
-    </div>
-  `;
+      <button style="background:none;border:none;color:var(--text-light);cursor:pointer;font-size:14px;flex-shrink:0;" onclick="document.getElementById('set-${setId}').remove()">✕</button>
+    `;
+  }
   container.appendChild(div);
+}
+
+function toggleBWWeight(setId) {
+  const type = $('set-bwtype-' + setId)?.value;
+  const weightInput = $('set-weight-' + setId);
+  if (!weightInput) return;
+  weightInput.style.display = (type === 'bw') ? 'none' : 'block';
+  if (type === 'bw') weightInput.value = '';
 }
 
 function saveWorkoutSession() {
@@ -1997,8 +2025,19 @@ function buildGymSession(templateOnly = false) {
     setsContainer.querySelectorAll('[id^="set-reps-"]').forEach(repsInput => {
       const setId = repsInput.id.replace('set-reps-', '');
       const reps = parseInt($('set-reps-' + setId)?.value) || 0;
-      const weight = parseFloat($('set-weight-' + setId)?.value) || 0;
-      if (reps > 0 || weight > 0) sets.push({ reps, weight });
+      const bwTypeEl = $('set-bwtype-' + setId);
+      let weight, weightLabel;
+      if (bwTypeEl) {
+        const bwType = bwTypeEl.value;
+        const kg = parseFloat($('set-weight-' + setId)?.value) || 0;
+        if (bwType === 'bw') { weight = null; weightLabel = 'BW'; }
+        else if (bwType === 'bw+') { weight = kg; weightLabel = `BW + ${kg}kg`; }
+        else { weight = -kg; weightLabel = `BW − ${kg}kg`; }
+      } else {
+        weight = parseFloat($('set-weight-' + setId)?.value) || 0;
+        weightLabel = weight + 'kg';
+      }
+      if (reps > 0) sets.push({ reps, weight, weightLabel });
     });
     if (sets.length > 0 || templateOnly) {
       exercises.push({ exerciseId: exId, name: ex?.name || 'Unknown', muscle: ex?.muscle, sets });
@@ -2316,7 +2355,7 @@ ${'═'.repeat(60)}
         w.exercises.forEach(e => {
           report += `  • ${e.name} (${e.muscle || ''})\n`;
           e.sets.forEach((s, i) => {
-            report += `      Set ${i+1}: ${s.reps} reps @ ${s.weight} kg\n`;
+            report += `      Set ${i+1}: ${s.reps} reps @ ${s.weightLabel || s.weight + 'kg'}\n`;
           });
         });
       } else if (w.type === 'rowing') {
