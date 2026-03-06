@@ -922,6 +922,53 @@
     </div>
   </div>
 
+
+    <!-- HISTORY -->
+    <div class="section" id="sec-history">
+      <div class="section-header">
+        <div class="section-title">History</div>
+        <div class="section-subtitle">Browse, edit and copy past days</div>
+      </div>
+
+      <div class="card" style="margin-bottom:12px;">
+        <div class="flex-between">
+          <button class="btn btn-ghost btn-sm" onclick="historyPrevDay()">← Prev</button>
+          <div style="text-align:center;">
+            <div style="font-family:'Lora',serif;font-size:16px;font-weight:600;color:var(--text-dark);" id="history-date-label">—</div>
+            <input type="date" id="history-date-picker" class="form-input" style="margin-top:6px;font-size:13px;text-align:center;" onchange="loadHistoryDay(this.value)">
+          </div>
+          <button class="btn btn-ghost btn-sm" id="history-next-btn" onclick="historyNextDay()">Next →</button>
+        </div>
+      </div>
+
+      <!-- Meals card -->
+      <div class="card">
+        <div class="flex-between" style="margin-bottom:14px;">
+          <div class="card-title" style="margin:0;">Meals</div>
+          <button class="btn btn-ghost btn-sm" onclick="openAddMealToHistory()">+ Add meal</button>
+        </div>
+        <div id="history-meals-list"></div>
+        <div id="history-meals-totals"></div>
+      </div>
+
+      <!-- Workout card -->
+      <div class="card">
+        <div class="flex-between" style="margin-bottom:14px;">
+          <div class="card-title" style="margin:0;">Workout</div>
+          <button class="btn btn-ghost btn-sm" onclick="openEditWorkoutHistory()">Edit</button>
+        </div>
+        <div id="history-workout-display"></div>
+      </div>
+
+      <!-- Check-in card -->
+      <div class="card">
+        <div class="flex-between" style="margin-bottom:14px;">
+          <div class="card-title" style="margin:0;">Check-in</div>
+          <button class="btn btn-ghost btn-sm" onclick="openEditCheckinHistory()">Edit</button>
+        </div>
+        <div id="history-checkin-display"></div>
+      </div>
+    </div>
   <!-- BOTTOM NAV -->
   <nav class="bottom-nav">
     <button class="nav-item active" id="nav-today" onclick="showSection('today')">
@@ -935,6 +982,9 @@
     </button>
     <button class="nav-item" id="nav-checkin" onclick="showSection('checkin')">
       <span class="nav-icon">💚</span>Check-in
+    </button>
+    <button class="nav-item" id="nav-history" onclick="showSection('history')">
+      <span class="nav-icon">📅</span>History
     </button>
     <button class="nav-item" id="nav-report" onclick="showSection('report')">
       <span class="nav-icon">📋</span>Report
@@ -1136,6 +1186,130 @@
   </div>
 </div>
 
+
+<!-- Copy meal modal -->
+<div class="modal-overlay" id="modal-copy-meal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Copy meal to…</div>
+    <p class="text-muted" style="margin-bottom:14px;font-size:13px;" id="copy-meal-name-preview"></p>
+    <div class="form-group">
+      <label class="form-label">Copy to date</label>
+      <input type="date" class="form-input" id="copy-meal-target-date">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Meal slot</label>
+      <select class="form-select" id="copy-meal-target-slot">
+        <option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option>
+      </select>
+    </div>
+    <input type="hidden" id="copy-meal-entry-id">
+    <input type="hidden" id="copy-meal-source-date">
+    <div class="flex-gap mt-16">
+      <button class="btn btn-sage" onclick="confirmCopyMeal()" style="flex:1;">Copy</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-copy-meal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit check-in history modal -->
+<div class="modal-overlay" id="modal-edit-checkin-history">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="edit-checkin-history-title">Edit check-in</div>
+
+    <div class="slider-group">
+      <div class="slider-header"><span class="slider-label">Mood</span><span class="slider-value" id="hval-mood">5</span></div>
+      <input type="range" min="1" max="10" value="5" id="hsl-mood" oninput="$('hval-mood').textContent=this.value">
+    </div>
+    <div class="slider-group">
+      <div class="slider-header"><span class="slider-label">Energy</span><span class="slider-value" id="hval-energy">5</span></div>
+      <input type="range" min="1" max="10" value="5" id="hsl-energy" oninput="$('hval-energy').textContent=this.value">
+    </div>
+    <div class="slider-group">
+      <div class="slider-header"><span class="slider-label">Stress</span><span class="slider-value" id="hval-stress">5</span></div>
+      <input type="range" min="1" max="10" value="5" id="hsl-stress" oninput="$('hval-stress').textContent=this.value">
+    </div>
+    <div class="slider-group">
+      <div class="slider-header"><span class="slider-label">Bloating</span><span class="slider-value" id="hval-bloating">1</span></div>
+      <input type="range" min="1" max="10" value="1" id="hsl-bloating" oninput="$('hval-bloating').textContent=this.value">
+    </div>
+    <div class="slider-group">
+      <div class="slider-header"><span class="slider-label">Sleep quality</span><span class="slider-value" id="hval-sleep-q">5</span></div>
+      <input type="range" min="1" max="10" value="5" id="hsl-sleep-q" oninput="$('hval-sleep-q').textContent=this.value">
+    </div>
+    <div class="divider"></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Sleep (hours)</label>
+        <input type="number" class="form-input" id="h-sleep-hours" placeholder="7.5" min="0" max="24" step="0.5">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Weight (kg)</label>
+        <input type="number" class="form-input" id="h-checkin-weight" placeholder="65.0" step="0.1">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Steps</label>
+      <input type="number" class="form-input" id="h-checkin-steps" placeholder="8000">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Cycle day / Period</label>
+      <div class="cycle-phases" id="h-cycle-phase-selector">
+        <div class="phase-tag" onclick="selectHistoryPhase(this,'none')">None</div>
+        <div class="phase-tag selected" onclick="selectHistoryPhase(this,'day')">Cycle day</div>
+        <div class="phase-tag" onclick="selectHistoryPhase(this,'period')">Period</div>
+        <div class="phase-tag" onclick="selectHistoryPhase(this,'ovulation')">Ovulation</div>
+        <div class="phase-tag" onclick="selectHistoryPhase(this,'pms')">PMS</div>
+      </div>
+      <input type="number" class="form-input mt-8" id="h-cycle-day-num" placeholder="Cycle day number" min="1" max="40">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <textarea class="form-textarea" id="h-checkin-notes" placeholder="Symptoms, observations…"></textarea>
+    </div>
+    <div class="flex-gap mt-16">
+      <button class="btn btn-sage" onclick="saveCheckinHistory()" style="flex:1;">Save</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-edit-checkin-history')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add meal to history modal -->
+<div class="modal-overlay" id="modal-add-meal-history">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="add-meal-history-title">Add meal</div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="history-food-search" placeholder="Search food database…" oninput="searchHistoryFood(this.value)" autocomplete="off">
+    </div>
+    <div class="search-results" id="history-food-search-results"></div>
+    <div id="history-food-selected" style="display:none;">
+      <div class="log-entry" style="margin-bottom:12px;">
+        <div class="log-entry-info">
+          <div class="log-entry-name" id="history-selected-food-name">—</div>
+          <div class="log-entry-detail" id="history-selected-food-detail">—</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Servings</label>
+          <input type="number" class="form-input" id="history-food-servings" value="1" min="0.25" step="0.25">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Meal</label>
+          <select class="form-select" id="history-food-meal">
+            <option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-sage btn-full mt-8" onclick="confirmAddMealToHistory()">Add to log</button>
+    </div>
+    <input type="hidden" id="history-selected-food-id">
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1289,6 +1463,9 @@ async function initApp() {
   const monday = new Date(now);
   monday.setDate(now.getDate() - now.getDay() + 1);
   $('report-start-date').value = monday.toISOString().split('T')[0];
+  $('history-date-picker').value = today();
+  $('history-next-btn').disabled = true;
+  $('history-next-btn').style.opacity = '0.3';
 
   // Load from GitHub
   try {
@@ -1600,13 +1777,7 @@ function refreshAll() {
 // ══════════════════════════════════════════════
 //  NAVIGATION
 // ══════════════════════════════════════════════
-function showSection(name) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  $('sec-' + name).classList.add('active');
-  $('nav-' + name).classList.add('active');
-  window.scrollTo(0, 0);
-}
+// showSection moved to history section below
 
 function switchFoodTab(tab, btn) {
   ['log','database','history'].forEach(t => {
@@ -2597,6 +2768,288 @@ function saveBarcodeFood() {
   selectFood(item.id);
   showSection('food');
   showToast('Saved to database ✓');
+  saveAndSync();
+}
+
+
+// ══════════════════════════════════════════════
+//  HISTORY
+// ══════════════════════════════════════════════
+let historyDate = today();
+let historyCheckinPhase = 'day';
+
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  $('sec-' + name).classList.add('active');
+  $('nav-' + name).classList.add('active');
+  window.scrollTo(0, 0);
+  if (name === 'history') loadHistoryDay(historyDate);
+}
+
+function loadHistoryDay(date) {
+  historyDate = date;
+  $('history-date-picker').value = date;
+  $('history-date-label').textContent = formatDate(date);
+  // Disable next button if at today
+  $('history-next-btn').disabled = date >= today();
+  $('history-next-btn').style.opacity = date >= today() ? '0.3' : '1';
+  renderHistoryMeals();
+  renderHistoryWorkout();
+  renderHistoryCheckin();
+}
+
+function historyPrevDay() {
+  const d = new Date(historyDate + 'T12:00:00');
+  d.setDate(d.getDate() - 1);
+  loadHistoryDay(d.toISOString().split('T')[0]);
+}
+
+function historyNextDay() {
+  const d = new Date(historyDate + 'T12:00:00');
+  d.setDate(d.getDate() + 1);
+  const next = d.toISOString().split('T')[0];
+  if (next <= today()) loadHistoryDay(next);
+}
+
+// ── Meals ──
+function renderHistoryMeals() {
+  const log = getLog(historyDate);
+  const list = $('history-meals-list');
+  const totalsEl = $('history-meals-totals');
+
+  if (!log.meals || log.meals.length === 0) {
+    list.innerHTML = '<div class="text-muted" style="font-size:13px;">No meals logged.</div>';
+    totalsEl.innerHTML = '';
+    return;
+  }
+
+  list.innerHTML = log.meals.map(e => `
+    <div class="log-entry">
+      <div class="log-entry-info">
+        <div class="log-entry-name">${e.name} <span style="color:var(--text-light);font-size:12px;">(${e.meal})</span></div>
+        <div class="log-entry-detail">${e.servings} serving${e.servings !== 1 ? 's' : ''} · ${e.calories} kcal · P: ${e.protein}g · C: ${e.carbs}g · F: ${e.fat}g</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0;margin-left:8px;">
+        <button class="btn btn-ghost btn-sm" style="font-size:11px;padding:4px 8px;" onclick="openCopyMealModal('${e.id}','${historyDate}')">Copy</button>
+        <button class="log-entry-delete" onclick="deleteHistoryMeal('${e.id}')">✕</button>
+      </div>
+    </div>
+  `).join('');
+
+  const t = log.meals.reduce((a, e) => ({ cal: a.cal+e.calories, p: a.p+e.protein, c: a.c+e.carbs, f: a.f+e.fat }), {cal:0,p:0,c:0,f:0});
+  totalsEl.innerHTML = `
+    <div class="divider"></div>
+    <div class="nutrition-grid" style="margin-top:10px;">
+      <div class="nutrition-cell"><div class="nutrition-cell-value">${t.cal}</div><div class="nutrition-cell-label">Calories</div></div>
+      <div class="nutrition-cell"><div class="nutrition-cell-value">${t.p.toFixed(1)}</div><div class="nutrition-cell-label">Protein g</div></div>
+      <div class="nutrition-cell"><div class="nutrition-cell-value">${t.c.toFixed(1)}</div><div class="nutrition-cell-label">Carbs g</div></div>
+      <div class="nutrition-cell"><div class="nutrition-cell-value">${t.f.toFixed(1)}</div><div class="nutrition-cell-label">Fat g</div></div>
+    </div>
+  `;
+}
+
+function deleteHistoryMeal(id) {
+  const log = getLog(historyDate);
+  log.meals = log.meals.filter(e => e.id !== id);
+  renderHistoryMeals();
+  if (historyDate === today()) { refreshTodayFoodLog(); refreshTodaySummary(); }
+  saveAndSync();
+}
+
+function openCopyMealModal(entryId, sourceDate) {
+  const log = getLog(sourceDate);
+  const entry = log.meals.find(e => e.id === entryId);
+  if (!entry) return;
+  $('copy-meal-name-preview').textContent = `"${entry.name}" (${entry.servings} serving${entry.servings!==1?'s':''} · ${entry.calories} kcal)`;
+  $('copy-meal-entry-id').value = entryId;
+  $('copy-meal-source-date').value = sourceDate;
+  $('copy-meal-target-date').value = today();
+  $('copy-meal-target-slot').value = entry.meal;
+  openModal('modal-copy-meal');
+}
+
+function confirmCopyMeal() {
+  const sourceDate = $('copy-meal-source-date').value;
+  const entryId = $('copy-meal-entry-id').value;
+  const targetDate = $('copy-meal-target-date').value;
+  const targetSlot = $('copy-meal-target-slot').value;
+
+  const sourceLog = getLog(sourceDate);
+  const entry = sourceLog.meals.find(e => e.id === entryId);
+  if (!entry) return;
+
+  const copy = Object.assign({}, entry, { id: uid(), meal: targetSlot });
+  getLog(targetDate).meals.push(copy);
+
+  closeModal('modal-copy-meal');
+  if (targetDate === historyDate) renderHistoryMeals();
+  if (targetDate === today()) { refreshTodayFoodLog(); refreshTodaySummary(); }
+  showToast('Copied ✓');
+  saveAndSync();
+}
+
+function openAddMealToHistory() {
+  $('history-food-search').value = '';
+  $('history-food-search-results').classList.remove('visible');
+  $('history-food-selected').style.display = 'none';
+  $('add-meal-history-title').textContent = 'Add meal — ' + formatDate(historyDate);
+  openModal('modal-add-meal-history');
+}
+
+function searchHistoryFood(query) {
+  const results = $('history-food-search-results');
+  if (query.length < 1) { results.classList.remove('visible'); return; }
+  const matches = DATA.foodDatabase.filter(f => f.name.toLowerCase().includes(query.toLowerCase())).slice(0, 8);
+  results.innerHTML = matches.map(f => `
+    <div class="search-result-item" onclick="selectHistoryFood('${f.id}')">
+      <div>${f.name}</div>
+      <div class="search-result-meta">${f.servingSize}${f.servingUnit} · ${f.calories} kcal</div>
+    </div>
+  `).join('');
+  results.classList.add('visible');
+}
+
+function selectHistoryFood(id) {
+  const f = DATA.foodDatabase.find(f => f.id === id);
+  if (!f) return;
+  $('history-selected-food-id').value = id;
+  $('history-selected-food-name').textContent = f.name;
+  $('history-selected-food-detail').textContent = `${f.servingSize}${f.servingUnit} per serving`;
+  $('history-food-servings').value = 1;
+  $('history-food-search-results').classList.remove('visible');
+  $('history-food-search').value = '';
+  $('history-food-selected').style.display = 'block';
+}
+
+function confirmAddMealToHistory() {
+  const id = $('history-selected-food-id').value;
+  const f = DATA.foodDatabase.find(f => f.id === id);
+  if (!f) return;
+  const servings = parseFloat($('history-food-servings').value) || 1;
+  const meal = $('history-food-meal').value;
+  const entry = {
+    id: uid(), foodId: f.id, name: f.name, servings, meal,
+    calories: Math.round(f.calories * servings),
+    protein: parseFloat((f.protein * servings).toFixed(1)),
+    carbs: parseFloat((f.carbs * servings).toFixed(1)),
+    fat: parseFloat((f.fat * servings).toFixed(1)),
+    fiber: parseFloat((f.fiber * servings).toFixed(1)),
+    sugar: parseFloat((f.sugar * servings).toFixed(1)),
+    satFat: parseFloat((f.satFat * servings).toFixed(1)),
+    sodium: Math.round(f.sodium * servings),
+    time: new Date().toTimeString().slice(0,5)
+  };
+  getLog(historyDate).meals.push(entry);
+  closeModal('modal-add-meal-history');
+  renderHistoryMeals();
+  if (historyDate === today()) { refreshTodayFoodLog(); refreshTodaySummary(); }
+  showToast('Meal added ✓');
+  saveAndSync();
+}
+
+// ── Workout ──
+function renderHistoryWorkout() {
+  const w = getLog(historyDate).workout;
+  const el = $('history-workout-display');
+  if (!w) { el.innerHTML = '<div class="text-muted" style="font-size:13px;">No workout logged.</div>'; return; }
+  if (w.type === 'gym') {
+    el.innerHTML = w.exercises.map(e => `
+      <div style="margin-bottom:12px;">
+        <div style="font-weight:500;font-size:14px;margin-bottom:4px;">${e.name} <span style="color:var(--text-light);font-size:12px;">${e.muscle||''}</span></div>
+        ${e.sets.map((s,i) => `<div style="font-size:12px;color:var(--text-mid);padding-left:8px;">Set ${i+1}: ${s.reps} reps @ ${s.weightLabel || s.weight+'kg'}</div>`).join('')}
+      </div>
+    `).join('');
+  } else if (w.type === 'rowing') {
+    el.innerHTML = `<div class="text-muted" style="font-size:13px;">🚣 ${w.distance}m · ${w.duration}min${w.split?' · '+w.split+' /500m':''}</div>`;
+  } else {
+    el.innerHTML = `<div class="text-muted" style="font-size:13px;">🧘 ${w.notes||'Yoga'} · ${w.duration}min</div>`;
+  }
+}
+
+function openEditWorkoutHistory() {
+  // Navigate to workout section pre-loaded — for now just guide user
+  showToast('To edit workout: go to Workout tab and re-log, then come back');
+}
+
+// ── Check-in ──
+function renderHistoryCheckin() {
+  const c = getLog(historyDate).checkin;
+  const el = $('history-checkin-display');
+  if (!c) { el.innerHTML = '<div class="text-muted" style="font-size:13px;">No check-in logged.</div>'; return; }
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;">
+      <div><span style="color:var(--text-light);">Mood</span> <strong>${c.mood}/10</strong></div>
+      <div><span style="color:var(--text-light);">Energy</span> <strong>${c.energy}/10</strong></div>
+      <div><span style="color:var(--text-light);">Stress</span> <strong>${c.stress}/10</strong></div>
+      <div><span style="color:var(--text-light);">Bloating</span> <strong>${c.bloating}/10</strong></div>
+      <div><span style="color:var(--text-light);">Sleep quality</span> <strong>${c.sleepQuality}/10</strong></div>
+      ${c.sleepHours ? `<div><span style="color:var(--text-light);">Sleep</span> <strong>${c.sleepHours}h</strong></div>` : ''}
+      ${c.weight ? `<div><span style="color:var(--text-light);">Weight</span> <strong>${c.weight}kg</strong></div>` : ''}
+      ${c.steps ? `<div><span style="color:var(--text-light);">Steps</span> <strong>${c.steps}</strong></div>` : ''}
+      ${c.cycleDay ? `<div><span style="color:var(--text-light);">Cycle</span> <strong>Day ${c.cycleDay}${c.cyclePhase!=='day'?' ('+c.cyclePhase+')':''}</strong></div>` : ''}
+    </div>
+    ${c.notes ? `<div style="margin-top:10px;font-size:13px;font-style:italic;color:var(--text-mid);">"${c.notes}"</div>` : ''}
+  `;
+}
+
+function openEditCheckinHistory() {
+  const c = getLog(historyDate).checkin;
+  $('edit-checkin-history-title').textContent = 'Edit check-in — ' + formatDate(historyDate);
+
+  // Pre-fill with existing or defaults
+  const mood = c?.mood || 5;
+  const energy = c?.energy || 5;
+  const stress = c?.stress || 5;
+  const bloating = c?.bloating || 1;
+  const sleepQ = c?.sleepQuality || 5;
+
+  $('hsl-mood').value = mood; $('hval-mood').textContent = mood;
+  $('hsl-energy').value = energy; $('hval-energy').textContent = energy;
+  $('hsl-stress').value = stress; $('hval-stress').textContent = stress;
+  $('hsl-bloating').value = bloating; $('hval-bloating').textContent = bloating;
+  $('hsl-sleep-q').value = sleepQ; $('hval-sleep-q').textContent = sleepQ;
+  $('h-sleep-hours').value = c?.sleepHours || '';
+  $('h-checkin-weight').value = c?.weight || '';
+  $('h-checkin-steps').value = c?.steps || '';
+  $('h-cycle-day-num').value = c?.cycleDay || '';
+  $('h-checkin-notes').value = c?.notes || '';
+
+  // Set cycle phase
+  historyCheckinPhase = c?.cyclePhase || 'day';
+  document.querySelectorAll('#h-cycle-phase-selector .phase-tag').forEach(t => {
+    t.classList.toggle('selected', t.onclick.toString().includes("'"+historyCheckinPhase+"'"));
+  });
+
+  openModal('modal-edit-checkin-history');
+}
+
+function selectHistoryPhase(el, phase) {
+  historyCheckinPhase = phase;
+  document.querySelectorAll('#h-cycle-phase-selector .phase-tag').forEach(t => t.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function saveCheckinHistory() {
+  const checkin = {
+    mood: parseInt($('hsl-mood').value),
+    energy: parseInt($('hsl-energy').value),
+    stress: parseInt($('hsl-stress').value),
+    bloating: parseInt($('hsl-bloating').value),
+    sleepQuality: parseInt($('hsl-sleep-q').value),
+    sleepHours: parseFloat($('h-sleep-hours').value) || null,
+    weight: parseFloat($('h-checkin-weight').value) || null,
+    steps: parseInt($('h-checkin-steps').value) || null,
+    cyclePhase: historyCheckinPhase,
+    cycleDay: parseInt($('h-cycle-day-num').value) || null,
+    notes: $('h-checkin-notes').value.trim(),
+    time: getLog(historyDate).checkin?.time || new Date().toTimeString().slice(0,5)
+  };
+  getLog(historyDate).checkin = checkin;
+  closeModal('modal-edit-checkin-history');
+  renderHistoryCheckin();
+  if (historyDate === today()) { refreshTodaySummary(); refreshCheckinPreview(); }
+  showToast('Check-in saved ✓');
   saveAndSync();
 }
 
